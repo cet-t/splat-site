@@ -1,12 +1,14 @@
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use chrono::{DateTime, Datelike, Timelike, Utc};
 use tokio::sync::Mutex;
 
-use crate::splatoon::{
-    schedule::{self, Mode, RawScheduleInfo, build_url},
-    weapon::{self, RawWeaponInfo},
+use crate::{
+    helper::error_text,
+    splatoon::{
+        schedule::{self, Mode, RawScheduleInfo, build_url},
+        weapon::{self, RawWeaponInfo},
+    },
 };
 
 const UPD8_H: [u32; 12] = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
@@ -68,7 +70,7 @@ impl AppCache {
             Ok((Utc::now(), res.results))
         }
 
-        if let Some(last_dt) = last_dt_opt.and_then(|dt| dt.as_mut())
+        if let Some(last_dt) = last_dt_opt.and_then(Option::as_mut)
             && let Some(schedule) = schedule_opt
         {
             if fetchable(*last_dt)
@@ -84,7 +86,9 @@ impl AppCache {
             self.schedule_fetched.insert(mode, Some(dt));
         }
 
-        self.schedule.get(&mode).ok_or(anyhow::anyhow!(""))
+        self.schedule
+            .get(&mode)
+            .ok_or(anyhow::anyhow!("{}", error_text()))
     }
 
     pub async fn get_weapons(&mut self, client: reqwest::Client) -> &Option<Vec<RawWeaponInfo>> {

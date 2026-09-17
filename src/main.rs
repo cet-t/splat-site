@@ -20,6 +20,7 @@ use crate::{
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let addr = format!("0.0.0.0:{}", cli.port()?);
+    println!("start: {addr}");
 
     let state = AppState::new();
 
@@ -35,7 +36,7 @@ async fn main() -> anyhow::Result<()> {
         // weapon
         .route("/weapon", get(weapon::get_weapon))
         .with_state(state)
-        .nest_service("/fonts", ServeDir::new("assets/fonts"));
+        .nest_service("/shared-assets", ServeDir::new("assets"));
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind(addr).await?;

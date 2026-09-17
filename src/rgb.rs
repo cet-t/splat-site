@@ -1,9 +1,9 @@
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Rgb(pub [u8; 3]);
 
-impl Into<String> for Rgb {
-    fn into(self) -> String {
-        format!("{self}")
+impl From<Rgb> for String {
+    fn from(value: Rgb) -> Self {
+        format!("{value}")
     }
 }
 
@@ -25,7 +25,7 @@ impl<'de> serde::de::Visitor<'de> for RawRgb {
     type Value = [u8; 3];
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "")
+        write!(formatter, "a hexadecimal string of length 6")
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -34,9 +34,15 @@ impl<'de> serde::de::Visitor<'de> for RawRgb {
     {
         match v.len() {
             6 => {
-                let rgb = [&v[..2], &v[2..4], &v[4..6]]
-                    .map(|s| u8::from_str_radix(s, 16).unwrap_or_default());
-                Ok(rgb)
+                let s = [&v[..2], &v[2..4], &v[4..6]].map(|s| u8::from_str_radix(s, 16));
+                if s.iter().any(Result::is_err) {
+                    Err(serde::de::Error::invalid_value(
+                        serde::de::Unexpected::Str(v),
+                        &self,
+                    ))
+                } else {
+                    Ok(s.map(Result::unwrap))
+                }
             }
             _ => Err(serde::de::Error::invalid_value(
                 serde::de::Unexpected::Str(v),

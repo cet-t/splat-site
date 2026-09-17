@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>splapi3 API Docs</title>
+    <link href="/shared-assets/styles/docs.css" rel="stylesheet" />
+  </head>
+  <body>
+    <header>
+      <h1>splapi3 — Discord Embed API</h1>
+      <p>
+        Splatoon3 スケジュール情報を Discord OGP 埋め込み用 HTML として返す API
+      </p>
+    </header>
+
+    <main>
+      <section>
+        <h2>概要</h2>
+        <p>
+          このサービスは
+          <a href="https://spla3.yuu26.com/" target="_blank" rel="noopener"
+            >spla3.yuu26.com API</a
+          >
+          からスケジュール情報を取得し、Discord のリンク展開（OGP）に最適化した
+          HTML ページを返す。 URL を Discord
+          に貼るとステージ画像・ルール名・開催時間がカード表示される。
+        </p>
+        <div class="card">
+          <strong>ベースURL</strong>: <code>https://splat.site</code>
+        </div>
+      </section>
+
+      <section>
+        <h2>エンドポイント一覧</h2>
+
+        <div class="card">
+          <span class="method-get">GET</span><span class="path">/</span>
+          <p class="desc">疎通確認用。<code>"Hello, World!"</code> を返す。</p>
+        </div>
+
+        <div class="card">
+          <span class="method-get">GET</span><span class="path">/open</span>
+          <span class="badge">= /open/now</span>
+          <p class="desc">
+            バンカラマッチ（オープン）の現在開催中スケジュール。
+          </p>
+        </div>
+
+        <div class="card">
+          <span class="method-get">GET</span><span class="path">/open/now</span>
+          <p class="desc">
+            バンカラマッチ（オープン）の現在開催中スケジュール。
+          </p>
+        </div>
+
+        <div class="card">
+          <span class="method-get">GET</span
+          ><span class="path">/open/next</span>
+          <p class="desc">
+            バンカラマッチ（オープン）の次回以降のスケジュール。<code>n</code>
+            パラメータで何回後かを指定。
+          </p>
+        </div>
+
+        <div class="card">
+          <span class="method-get">GET</span><span class="path">/regular</span>
+          <span class="badge">= /regular/now</span>
+          <p class="desc">レギュラーマッチの現在開催中スケジュール。</p>
+        </div>
+
+        <div class="card">
+          <span class="method-get">GET</span
+          ><span class="path">/regular/now</span>
+          <p class="desc">レギュラーマッチの現在開催中スケジュール。</p>
+        </div>
+
+        <div class="card">
+          <span class="method-get">GET</span
+          ><span class="path">/regular/next</span>
+          <p class="desc">
+            レギュラーマッチの次回以降のスケジュール。<code>n</code>
+            パラメータで何回後かを指定。
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>クエリパラメータ</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>対象</th>
+              <th>型</th>
+              <th>説明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>t</code></td>
+              <td>全エンドポイント</td>
+              <td>u32</td>
+              <td>現状サーバー側で未使用（受理されるが出力に影響しない）</td>
+            </tr>
+            <tr>
+              <td><code>n</code>（別名 <code>i</code>）</td>
+              <td><code>/open/next</code>, <code>/regular/next</code></td>
+              <td>u8</td>
+              <td>
+                何回先の対戦かを指定。<code>0</code> = 現在開催中（<code
+                  >now</code
+                >
+                と同じ）、 <code>1</code> = 次回（省略時デフォルト）、<code
+                  >2</code
+                >
+                = 次々回 ...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="desc">
+          未知のクエリパラメータが付くとリクエストは拒否される（<code>deny_unknown_fields</code>）。
+        </p>
+      </section>
+
+      <section>
+        <h2>リクエスト例</h2>
+        <pre>
+GET /open/next?n=2
+GET /regular/next?i=1
+GET /regular/now</pre
+        >
+      </section>
+
+      <section>
+        <h2>レスポンス</h2>
+        <p>
+          <code>Content-Type: text/html</code>。以下の情報を含む OGP
+          メタタグ付き HTML を返す。
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>og:site_name</code></td>
+              <td><code>splat.site</code></td>
+            </tr>
+            <tr>
+              <td><code>og:title</code></td>
+              <td>ルール名（例: ガチエリア、ナワバリバトル）</td>
+            </tr>
+            <tr>
+              <td><code>og:description</code></td>
+              <td>
+                開催時間帯（<code>MM/DD HH:MM - MM/DD HH:MM</code
+                >）とステージ名一覧
+              </td>
+            </tr>
+            <tr>
+              <td><code>og:image</code>（複数）</td>
+              <td>各ステージのサムネイル画像URL</td>
+            </tr>
+            <tr>
+              <td><code>theme-color</code></td>
+              <td>
+                ルールに応じた色（ナワバリ: <code>#00ff00</code>、それ以外:
+                <code>#ffa500</code>）
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>エラー時</h3>
+        <p class="desc">
+          対象スケジュールが存在しない、または
+          <code>n</code> が範囲外の場合、本文 <code>"ERROR"</code> を200で返す
+          （上流APIエラーやHTTPステータスでは表現されない点に注意）。
+        </p>
+      </section>
+
+      <section>
+        <h2>対応ルール</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>API キー</th>
+              <th>表示名</th>
+              <th>カラー</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>TURF_WAR</code></td>
+              <td>ナワバリバトル</td>
+              <td>#00ff00</td>
+            </tr>
+            <tr>
+              <td><code>AREA</code></td>
+              <td>ガチエリア</td>
+              <td>#ffa500</td>
+            </tr>
+            <tr>
+              <td><code>LOFT</code></td>
+              <td>ガチヤグラ</td>
+              <td>#ffa500</td>
+            </tr>
+            <tr>
+              <td><code>GOAL</code></td>
+              <td>ガチホコバトル</td>
+              <td>#ffa500</td>
+            </tr>
+            <tr>
+              <td><code>CLAM</code></td>
+              <td>ガチアサリ</td>
+              <td>#ffa500</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>データソース</h2>
+        <p>
+          上流API: <code>https://spla3.yuu26.com/api/{{mode}}/{{schedule}}</code
+          ><br />
+          <code>mode</code> は <code>regular</code> /
+          <code>bankara-open</code>
+          のいずれか（本サービスが公開する機能範囲）。<br />
+          <code>schedule</code> は <code>now</code> または
+          <code>schedule</code>（<code>next</code> エンドポイント使用時）。
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      splat-site — API仕様書（<a
+        href="https://github.com/cet-t/splat-site/blob/main/src/main.rs"
+        ><code>src/main.rs</code></a
+      >
+      より生成）
+      <br />
+      <a href="https://splat.site">← URL Builder に戻る</a>
+      <br />
+      <a
+        class="gh-link"
+        href="https://github.com/cet-t/splat-site"
+        target="_blank"
+        rel="noopener"
+      >
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+    0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01
+    1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95
+    0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.58 7.58 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54
+    1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+          />
+        </svg>
+        GitHub
+      </a>
+    </footer>
+  </body>
+</html>
