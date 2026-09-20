@@ -30,6 +30,25 @@ impl AppCache {
         }
     }
 
+    pub(crate) fn calc_block(dt: DateTime<Utc>) -> i16 {
+        let mut block = -1;
+
+        for (i, hour) in UPD8_H.into_iter().enumerate().rev() {
+            if dt.hour() <= hour {
+                block = i as i16;
+                break;
+            }
+        }
+
+        block
+    }
+
+    pub(crate) fn is_diff_block(now: DateTime<Utc>, last: DateTime<Utc>) -> bool {
+        let now_block = Self::calc_block(now);
+        let last_block = Self::calc_block(last);
+        now_block != last_block
+    }
+
     pub async fn fetch_schedule(
         &mut self,
         client: reqwest::Client,
@@ -41,21 +60,7 @@ impl AppCache {
         fn fetchable(last_dt: DateTime<Utc>) -> bool {
             let now = Utc::now();
 
-            let is_diff_block = {
-                let calc_block = |dt: DateTime<Utc>| {
-                    let mut block = -1;
-                    for (i, hour) in UPD8_H.into_iter().enumerate().rev() {
-                        if dt.hour() <= hour {
-                            block = i as i16;
-                        }
-                    }
-                    block
-                };
-                let now_block = calc_block(now);
-                let last_block = calc_block(last_dt);
-                now_block != last_block
-            };
-
+            let is_diff_block = AppCache::is_diff_block(now, last_dt);
             let is_yesterday = last_dt.day() < now.day();
 
             is_diff_block || is_yesterday
@@ -114,5 +119,29 @@ impl AppState {
             client: reqwest::Client::new(),
             cache: Arc::new(Mutex::new(AppCache::new())),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use chrono::{NaiveDate, NaiveDateTime, NaiveTime, Utc};
+
+    #[test]
+    #[allow(deprecated)]
+    fn calc_block_works() {
+        let offset = *Utc::now().offset();
+
+        let dt: DateTime<Utc> = DateTime::from_naive_utc_and_offset(
+            NaiveDateTime::new(
+                NaiveDate::from_ymd(2026, 9, 21),
+                NaiveTime::from_hms(0, 0, 0),
+            ),
+            offset,
+        );
+
+        // [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+        assert_eq!(AppCache::calc_block(dt), 11);
     }
 }
