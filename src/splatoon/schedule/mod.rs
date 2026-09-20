@@ -15,9 +15,7 @@ pub use self::rule::*;
 pub use self::sche::*;
 
 use crate::data::{EmbedQuery, ScheduleInput};
-use crate::helper::SITE_URL;
-use crate::helper::error_text;
-use crate::helper::escape_html;
+use crate::helper::{SITE_URL, error_text, escape_html};
 use crate::state::AppState;
 
 const HTML: &str = include_str!("../../../assets/html/stage_ogp.html");

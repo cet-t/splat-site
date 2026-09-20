@@ -12,9 +12,8 @@ pub async fn get_weapon(
     State(state): State<AppState>,
     Query(query): Query<EmbedQuery>,
 ) -> Response {
-    if let Ok(r) = get_info(state, query).await {
-        (StatusCode::OK, r)
-    } else {
-        error_html()
-    }
+    get_info(state, query)
+        .await
+        .map(|r| (StatusCode::OK, r))
+        .unwrap_or(error_html())
 }
