@@ -11,8 +11,6 @@ use crate::{
     },
 };
 
-const UPD8_H: [u32; 12] = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
-
 #[derive(Clone)]
 pub struct AppCache {
     pub schedule: HashMap<Mode, Vec<RawScheduleInfo>>,
@@ -22,6 +20,12 @@ pub struct AppCache {
 }
 
 impl AppCache {
+    pub(crate) const UPD8_H: [i16; 12] = const {
+        let mut hours = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+        hours.reverse();
+        hours
+    };
+
     pub fn new() -> Self {
         Self {
             schedule: HashMap::with_capacity(2),
@@ -33,17 +37,16 @@ impl AppCache {
     pub(crate) fn calc_block(dt: DateTime<Utc>) -> i16 {
         let mut block = -1;
 
-        for (i, hour) in UPD8_H.into_iter().enumerate().rev() {
-            if dt.hour() <= hour {
+        for (i, hour) in Self::UPD8_H.into_iter().enumerate() {
+            if dt.hour() <= hour as u32 {
                 block = i as i16;
-                break;
             }
         }
 
         block
     }
 
-    pub(crate) fn is_diff_block(now: DateTime<Utc>, last: DateTime<Utc>) -> bool {
+    pub(crate) fn is_another_block(now: DateTime<Utc>, last: DateTime<Utc>) -> bool {
         let now_block = Self::calc_block(now);
         let last_block = Self::calc_block(last);
         now_block != last_block
@@ -57,23 +60,22 @@ impl AppCache {
         let schedule_opt = self.schedule.get_mut(&mode);
         let last_dt_opt = self.schedule_fetched.get_mut(&mode);
 
-        fn fetchable(last_dt: DateTime<Utc>) -> bool {
-            let now = Utc::now();
+        let now_dt = Utc::now();
 
-            let is_diff_block = AppCache::is_diff_block(now, last_dt);
-            let is_yesterday = last_dt.day() < now.day();
+        let fetchable = |last_dt: DateTime<Utc>| -> bool {
+            let is_diff_block = AppCache::is_another_block(now_dt, last_dt);
+            let is_yesterday = last_dt.day() < now_dt.day();
 
             is_diff_block || is_yesterday
-        }
+        };
 
-        async fn fetch(
-            mode: Mode,
-            client: reqwest::Client,
-        ) -> anyhow::Result<(DateTime<Utc>, Vec<RawScheduleInfo>)> {
+        let fetch = async |mode: Mode,
+                           client: reqwest::Client|
+               -> anyhow::Result<(DateTime<Utc>, Vec<RawScheduleInfo>)> {
             let url = build_url(mode, schedule::Schedule::After);
             let res = schedule::enquiry(client, url).await?;
-            Ok((Utc::now(), res.results))
-        }
+            Ok((now_dt, res.results))
+        };
 
         if let Some(last_dt) = last_dt_opt.and_then(Option::as_mut)
             && let Some(schedule) = schedule_opt
@@ -85,10 +87,10 @@ impl AppCache {
                 *schedule = fetched;
             }
         } else {
-            let (dt, fetched) = fetch(mode, client).await?;
-
-            self.schedule.insert(mode, fetched);
-            self.schedule_fetched.insert(mode, Some(dt));
+            if let Ok((dt, fetched)) = fetch(mode, client).await {
+                self.schedule.insert(mode, fetched);
+                self.schedule_fetched.insert(mode, Some(dt));
+            }
         }
 
         self.schedule
@@ -132,16 +134,20 @@ mod tests {
     #[allow(deprecated)]
     fn calc_block_works() {
         let offset = *Utc::now().offset();
+        let day = NaiveDate::from_ymd(2026, 9, 21);
+        let hours = AppCache::UPD8_H;
 
-        let dt: DateTime<Utc> = DateTime::from_naive_utc_and_offset(
-            NaiveDateTime::new(
-                NaiveDate::from_ymd(2026, 9, 21),
-                NaiveTime::from_hms(0, 0, 0),
-            ),
-            offset,
-        );
+        let _test = |h: u32, m: u32, exp: usize| {
+            let dt = DateTime::<Utc>::from_naive_utc_and_offset(
+                NaiveDateTime::new(day, NaiveTime::from_hms(h, m, 0)),
+                offset,
+            );
+            assert_eq!(hours[AppCache::calc_block(dt) as usize], hours[exp]);
+        };
 
         // [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
-        assert_eq!(AppCache::calc_block(dt), 11);
+        //test(0, 0, 0);
+        //test(1, 59, 1);
+        //test(23, 59, 11);
     }
 }

@@ -2,6 +2,7 @@ mod cliargs;
 mod common;
 mod data;
 mod helper;
+mod img;
 mod rgb;
 mod splatoon;
 mod state;

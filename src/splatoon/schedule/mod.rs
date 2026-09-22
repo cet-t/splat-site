@@ -29,7 +29,10 @@ pub async fn enquiry(client: reqwest::Client, url: String) -> anyhow::Result<sel
     Ok(serde_json::from_str(&res)?)
 }
 
-fn build_html_sche(info: &RawScheduleInfo, query: EmbedQuery) -> Html<String> {
+async fn build_html_sche(
+    info: &RawScheduleInfo,
+    query: EmbedQuery,
+) -> anyhow::Result<Html<String>> {
     let format_dt = |dt: &DateTime<FixedOffset>| {
         escape_html(dt.naive_local().format("%m/%d %H:%M").to_string())
     };
@@ -48,33 +51,28 @@ fn build_html_sche(info: &RawScheduleInfo, query: EmbedQuery) -> Html<String> {
         format!("{time}\n{}", stage_names.join("\n"))
     };
 
-    let imgs_meta = {
-        let metas: Vec<_> = info
-            .stages
-            .iter()
-            .map(|s| {
-                format!(
-                    "<meta property=\"og:image\" content=\"{}\">",
-                    escape_html(&s.image_url)
-                )
-            })
-            .collect();
-        metas.join("\n")
-    };
+    let stage0 = info.stages.first().ok_or(anyhow::anyhow!("no stages"))?;
+    let stage1 = info.stages.get(1).ok_or(anyhow::anyhow!("no stages"))?;
 
-    let imgs_src = {
-        let srcs: Vec<_> = info
-            .stages
-            .iter()
-            .map(|s| {
-                format!(
-                    "<img src=\"{}\" alt=\"stage\" style=\"max-width:100%\">",
-                    escape_html(&s.image_url)
-                )
-            })
-            .collect();
-        srcs.join("\n")
-    };
+    let combined_path = crate::img::combine(&stage0.image_url, &stage1.image_url).await?;
+    let combined_url = format!(
+        "https://{SITE_URL}/shared-assets/{}",
+        combined_path
+            .strip_prefix("assets/")
+            .unwrap_or(&combined_path)
+            .to_string_lossy()
+            .replace('\\', "/")
+    );
+
+    let imgs_meta = format!(
+        "<meta property=\"og:image\" content=\"{}\">",
+        escape_html(&combined_url)
+    );
+
+    let imgs_src = format!(
+        "<img src=\"{}\" alt=\"stage\" style=\"max-width:100%\">",
+        escape_html(&combined_url)
+    );
 
     let title = escape_html(info.rule);
     let desc = escape_html(desc);
@@ -89,7 +87,9 @@ fn build_html_sche(info: &RawScheduleInfo, query: EmbedQuery) -> Html<String> {
         (stringify!(imgs_src).to_owned(), &imgs_src),
     ];
 
-    Html(::strfmt::strfmt(HTML, &vars.into()).unwrap_or(error_text()))
+    Ok(Html(
+        ::strfmt::strfmt(HTML, &vars.into()).unwrap_or(error_text()),
+    ))
 }
 
 // --- core ---
@@ -108,5 +108,5 @@ async fn get_info(
         ScheduleInput::Next => info.get(query.n.unwrap_or(1) as usize),
     };
 
-    Ok(build_html_sche(info.ok_or(anyhow::anyhow!(""))?, query))
+    build_html_sche(info.ok_or(anyhow::anyhow!(""))?, query).await
 }
