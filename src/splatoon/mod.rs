@@ -1,4 +1,5 @@
 pub mod schedule;
+#[allow(unused)]
 pub mod weapon;
 
 #[macro_export]

@@ -11,11 +11,7 @@ use axum::{Router, routing::get};
 use clap::Parser;
 use tower_http::services::ServeDir;
 
-use crate::{
-    cliargs::Cli,
-    splatoon::{schedule, weapon},
-    state::AppState,
-};
+use crate::{cliargs::Cli, splatoon::schedule, state::AppState};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -29,13 +25,13 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/", get(common::get_url_builder))
         .route("/docs", get(common::get_docs))
-        // rotation
+        // schedule
         .route("/open", get(schedule::get_open_now))
         .route("/regular", get(schedule::get_regular_now))
         .route("/open/{*schedule}", get(schedule::get_open_schedule))
         .route("/regular/{*schedule}", get(schedule::get_regular_schedule))
         // weapon
-        .route("/weapon", get(weapon::get_weapon))
+        // .route("/weapon", get(weapon::get_weapon))
         .with_state(state)
         .nest_service("/shared-assets", ServeDir::new("assets"));
 
