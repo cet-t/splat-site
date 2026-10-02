@@ -32,6 +32,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/regular/{*schedule}", get(schedule::get_regular_schedule))
         // weapon
         // .route("/weapon", get(weapon::get_weapon))
+        .fallback(common::get_not_found)
         .with_state(state)
         .nest_service("/shared-assets", ServeDir::new("assets"));
 
