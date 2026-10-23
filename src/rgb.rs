@@ -33,7 +33,7 @@ impl<'de> serde::de::Visitor<'de> for RawRgb {
         E: serde::de::Error,
     {
         match v.len() {
-            6 => {
+            6 if v.is_ascii() => {
                 let s = [&v[..2], &v[2..4], &v[4..6]].map(|s| u8::from_str_radix(s, 16));
                 if s.iter().any(Result::is_err) {
                     Err(serde::de::Error::invalid_value(
