@@ -108,5 +108,5 @@ async fn get_info(
         ScheduleInput::Next => info.get(query.n.unwrap_or(1) as usize),
     };
 
-    build_html_sche(info.ok_or(anyhow::anyhow!(""))?, query).await
+    build_html_sche(info.ok_or(anyhow::anyhow!("no schedules"))?, query).await
 }

@@ -5,7 +5,9 @@ mod response;
 use axum::response::Html;
 pub use query::*;
 pub use response::*;
-use urng::{Choice, SplitMix32};
+use trng::Rng;
+use trng_a::Xorwow;
+use trng_sample::Choice;
 
 use crate::{
     data::EmbedQuery,
@@ -62,12 +64,18 @@ pub async fn get_info(
     let mut cache = cache.lock().await;
 
     let r = if let Some(raw) = cache.get_weapons(client).await {
+        let mut rng = {
+            let ts = chrono::Local::now();
+            Xorwow::from(ts.timestamp_subsec_nanos())
+        };
+
         let n = n.unwrap_or(1).clamp(1, 8) as usize;
-        let mut rng = SplitMix32::default();
         let mut weapons = Vec::with_capacity(n);
 
         for _ in 0..n {
-            weapons.push(rng.choice(raw));
+            if let Some(w) = rng.choice(raw) {
+                weapons.push(w);
+            }
         }
 
         build_html_weapon(&weapons, colour)
