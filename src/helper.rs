@@ -18,15 +18,16 @@ fn render_error_html(code: StatusCode, message: &str, hint: &str) -> String {
         .replace("{hint}", hint)
 }
 
-pub fn error_html() -> Response {
-    (
+pub fn error_html() -> Html<String> {
+    Html(render_error_html(
         StatusCode::INTERNAL_SERVER_ERROR,
-        Html(render_error_html(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal Server Error",
-            "しばらくしてからもうおためしください。",
-        )),
-    )
+        "Internal Server Error",
+        "しばらくしてからもうおためしください。",
+    ))
+}
+
+pub fn error_response() -> Response {
+    (StatusCode::INTERNAL_SERVER_ERROR, error_html())
 }
 
 pub fn not_found_html() -> Response {

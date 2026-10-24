@@ -16,6 +16,7 @@ use crate::{cliargs::Cli, splatoon::schedule, state::AppState};
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+
     let addr = format!("0.0.0.0:{}", cli.port()?);
     println!("start: {addr}");
 

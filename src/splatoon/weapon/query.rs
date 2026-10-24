@@ -3,7 +3,7 @@ use reqwest::StatusCode;
 
 use crate::{
     data::{EmbedQuery, Response},
-    helper::error_html,
+    helper::error_response,
     splatoon::weapon::get_info,
     state::AppState,
 };
@@ -15,5 +15,5 @@ pub async fn get_weapon(
     get_info(state, query)
         .await
         .map(|r| (StatusCode::OK, r))
-        .unwrap_or(error_html())
+        .unwrap_or(error_response())
 }

@@ -6,7 +6,7 @@ use axum::{
 
 use crate::{
     data::{EmbedQuery, ScheduleInput},
-    helper::error_html,
+    helper::error_response,
     splatoon::schedule::{Mode, get_info},
     state::AppState,
 };
@@ -19,7 +19,7 @@ pub async fn get_open_schedule(
     get_info(state, schedule, Mode::BankaraOpen, query)
         .await
         .map(|h| (StatusCode::OK, h))
-        .unwrap_or_else(|_| error_html())
+        .unwrap_or_else(|_| error_response())
 }
 
 pub async fn get_open_now(
@@ -29,7 +29,7 @@ pub async fn get_open_now(
     get_info(state, ScheduleInput::Now, Mode::BankaraOpen, query)
         .await
         .map(|h| (StatusCode::OK, h))
-        .unwrap_or_else(|_| error_html())
+        .unwrap_or_else(|_| error_response())
 }
 
 pub async fn get_regular_schedule(
@@ -40,7 +40,7 @@ pub async fn get_regular_schedule(
     get_info(state, schedule, Mode::Regular, query)
         .await
         .map(|h| (StatusCode::OK, h))
-        .unwrap_or_else(|_| error_html())
+        .unwrap_or_else(|_| error_response())
 }
 
 pub async fn get_regular_now(
@@ -50,5 +50,5 @@ pub async fn get_regular_now(
     get_info(state, ScheduleInput::Now, Mode::Regular, query)
         .await
         .map(|h| (StatusCode::OK, h))
-        .unwrap_or_else(|_| error_html())
+        .unwrap_or_else(|_| error_response())
 }

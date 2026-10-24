@@ -20,5 +20,5 @@ strum = { version = "0.28", features = ["derive"] }
 tokio = { version = "1.53.1", features = ["full"] }
 tower-http = { version = "0.7", features = ["fs"] }
 trng = "0.1"
-trng_a = { git = "https://github.com/cet-t/trng_a", features = ["xorwow"] }
+trng_a = { git = "https://github.com/cet-t/trng_a", features = ["sfc"] }
 trng_sample = { path = "../trng_sample", features = ["choice"] }

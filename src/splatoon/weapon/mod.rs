@@ -6,12 +6,12 @@ use axum::response::Html;
 pub use query::*;
 pub use response::*;
 use trng::Rng;
-use trng_a::Xorwow;
+use trng_a::Sfc64;
 use trng_sample::Choice;
 
 use crate::{
     data::EmbedQuery,
-    helper::{SITE_URL, error_text, escape_html},
+    helper::{SITE_URL, error_html, error_text, escape_html},
     rgb::Rgb,
     state::AppState,
 };
@@ -49,7 +49,10 @@ fn build_html_weapon(info: &[&RawWeaponInfo], colour: Option<Rgb>) -> Html<Strin
         (stringify!(colour).to_owned(), &colour),
     ];
 
-    Html(::strfmt::strfmt(HTML, &vars.into()).unwrap_or(error_text()))
+    // Html(::strfmt::strfmt(HTML, &vars.into()).unwrap_or(error_text()))
+    strfmt::strfmt(HTML, &vars.into())
+        .map(Html)
+        .unwrap_or(error_html())
 }
 
 pub async fn enquiry(client: reqwest::Client) -> anyhow::Result<self::RawResponse> {
@@ -66,7 +69,7 @@ pub async fn get_info(
     let r = if let Some(raw) = cache.get_weapons(client).await {
         let mut rng = {
             let ts = chrono::Local::now();
-            Xorwow::from(ts.timestamp_subsec_nanos())
+            Sfc64::from(ts.timestamp() as u64)
         };
 
         let n = n.unwrap_or(1).clamp(1, 8) as usize;
