@@ -47,4 +47,5 @@ pub fn escape_html<S: Into<String>>(s: S) -> String {
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
+        .replace('\'', "&#39")
 }

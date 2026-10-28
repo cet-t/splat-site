@@ -2798,6 +2798,7 @@ dependencies = [
 [[package]]
 name = "trng_sample"
 version = "0.1.0"
+source = "git+https://github.com/cet-t/trng_sample#ead138f62b71b6c49387ca636a2c55dc7e1bf4e8"
 dependencies = [
  "trng",
 ]

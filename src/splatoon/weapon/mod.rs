@@ -42,14 +42,14 @@ fn build_html_weapon(info: &[&RawWeaponInfo], colour: Option<Rgb>) -> Html<Strin
     };
 
     let vars = [
-        (stringify!(SITE_URL).to_owned(), SITE_URL),
-        (stringify!(title).to_owned(), &title),
-        (stringify!(w_meta).to_owned(), &w_meta),
-        (stringify!(w_body).to_owned(), &w_body),
-        (stringify!(colour).to_owned(), &colour),
-    ];
+        (stringify!(SITE_URL), SITE_URL),
+        (stringify!(title), &title),
+        (stringify!(w_meta), &w_meta),
+        (stringify!(w_body), &w_body),
+        (stringify!(colour), &colour),
+    ]
+    .map(|(k, v)| (k.to_owned(), v));
 
-    // Html(::strfmt::strfmt(HTML, &vars.into()).unwrap_or(error_text()))
     strfmt::strfmt(HTML, &vars.into())
         .map(Html)
         .unwrap_or(error_html())
@@ -66,25 +66,23 @@ pub async fn get_info(
 ) -> anyhow::Result<Html<String>> {
     let mut cache = cache.lock().await;
 
-    let r = if let Some(raw) = cache.get_weapons(client).await {
-        let mut rng = {
-            let ts = chrono::Local::now();
-            Sfc64::from(ts.timestamp() as u64)
-        };
-
-        let n = n.unwrap_or(1).clamp(1, 8) as usize;
-        let mut weapons = Vec::with_capacity(n);
-
-        for _ in 0..n {
-            if let Some(w) = rng.choice(raw) {
-                weapons.push(w);
-            }
-        }
-
-        build_html_weapon(&weapons, colour)
-    } else {
-        Html(error_text())
+    let Some(raw) = cache.get_weapons(client).await else {
+        return Ok(Html(error_text()));
     };
 
-    Ok(r)
+    let mut rng = {
+        let ts = chrono::Local::now();
+        Sfc64::from(ts.timestamp() as u64)
+    };
+
+    let n = n.map(|n| n.clamp(1, 8)).unwrap_or(1);
+    let mut weapons = Vec::with_capacity(n as usize);
+
+    for _ in 0..n {
+        if let Some(w) = rng.choice(raw) {
+            weapons.push(w);
+        }
+    }
+
+    Ok(build_html_weapon(&weapons, colour))
 }
